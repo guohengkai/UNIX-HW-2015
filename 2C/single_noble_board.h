@@ -28,11 +28,14 @@ enum BoardState
 
 struct ChessmanStep
 {
-    void Print() const;
-
-    int row;
-    int col;
+    std::size_t index;
     Movement move;
+};
+
+struct Position
+{
+    std::size_t row;
+    std::size_t col;
 };
 
 class SingleNobleBoard
@@ -40,21 +43,32 @@ class SingleNobleBoard
 public:
     explicit SingleNobleBoard(bool extend = false);
 
-    void Move(ChessmanStep& step);
-    void Back(ChessmanStep& step);
+    void Move(ChessmanStep &step);
+    void Back();
 
-    void CopyHistory(std::vector<ChessmanStep>* steps) const;
-    void GetValidSteps(std::vector<ChessmanStep>* steps) const;
+    void CopyHistory(std::vector<ChessmanStep> *steps) const;
+    void GetValidSteps(std::vector<ChessmanStep> *steps) const;
     
+    void PrintBoard() const;
+    void PrintStep(ChessmanStep &step) const;
+
     std::size_t chessman_num() { return chessman_num_; }
 
 private:
     virtual void InitBoard();
+    void StateToBoard(std::vector<std::vector<BoardState>> *board) const;
 
     bool extend_;
+    std::size_t board_size_;
     std::size_t chessman_num_;
-    std::vector<std::vector<BoardState>> state_;
-    std::vector<ChessmanStep> history_;
+
+    // Put all the possible position into one vector,
+    // and index all the possible movement
+    std::vector<BoardState> state_;
+    std::vector<Position> pos_;
+    std::vector<std::vector<int>> next_index_;
+    std::vector<std::vector<int>> move_index_;
+    std::vector<ChessmanStep> history_;  // Save the movement history
 };
 }  // namespace ghk
 

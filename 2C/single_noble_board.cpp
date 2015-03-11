@@ -17,10 +17,118 @@ const int MOVE[][2] = {
     { 0, -1 }, { 0, 1 }
 };
 
-void ChessmanStep::Print() const
+
+SingleNobleBoard::SingleNobleBoard(bool extend):
+    extend_(extend), chessman_num_(32)
 {
-    printf("(%d, %d) ", row, col);
-    switch (move)
+    InitBoard();
+}
+
+void SingleNobleBoard::Move(ChessmanStep& step)
+{
+    size_t index = step.index;
+    int next = next_index_[index][step.move];
+    int move = move_index_[index][step.move];
+    if ((state_[index] == BoardState::Occupied) && (next >= 0) && (move >= 0)
+            && (state_[next] == BoardState::Occupied)
+            && (state_[move] == BoardState::Empty))
+    {
+        history_.push_back(step);
+        state_[index] = BoardState::Empty;
+        state_[next] = BoardState::Empty;
+        state_[move] = BoardState::Occupied;
+    }
+}
+
+void SingleNobleBoard::Back()
+{
+    ChessmanStep step = history_.back();
+    size_t index = step.index;
+    int next = next_index_[index][step.move];
+    int move = move_index_[index][step.move];
+
+    state_[index] = BoardState::Occupied;
+    state_[next] = BoardState::Occupied;
+    state_[move] = BoardState::Empty;
+    
+    history_.pop_back();
+}
+
+void SingleNobleBoard::CopyHistory(vector<ChessmanStep>* steps) const
+{
+    if (steps == nullptr)
+    {
+        return;
+    }
+
+    *steps = std::move(vector<ChessmanStep>(history_));
+}
+
+void SingleNobleBoard::GetValidSteps(vector<ChessmanStep>* steps) const
+{
+    if (steps == nullptr)
+    {
+        return;
+    }
+
+    *steps = std::move(vector<ChessmanStep>());
+    for (size_t i = 0; i < state_.size(); ++i)
+    {
+        if (state_[i] == BoardState::Occupied)
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                int next = next_index_[i][j];
+                int move = move_index_[i][j];
+                if ((next >= 0) && (move >= 0))
+                {
+                    if ((state_[next] == BoardState::Occupied)
+                            && (state_[move] == BoardState::Empty))
+                    {
+                        ChessmanStep step{i, static_cast<Movement>(j)};
+                        steps->push_back(step);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void SingleNobleBoard::PrintBoard() const
+{
+    vector<vector<BoardState>> board;
+    StateToBoard(&board);
+
+    for (size_t i = 0; i < board_size_; ++i)
+    {
+        for (size_t j = 0; j < board_size_; ++j)
+        {
+            char ch;
+            switch (board[i][j])
+            {
+                case BoardState::Empty:
+                    ch = '.';
+                    break;
+                case BoardState::Occupied:
+                    ch = 'o';
+                    break;
+                case BoardState::Invalid:
+                    ch = ' ';
+                    break;
+                default:
+                    ch = ' ';
+                    break;
+            }
+            printf("%c", ch);
+        }
+        printf("\n");
+    }
+}
+
+void SingleNobleBoard::PrintStep(ChessmanStep &step) const
+{
+    printf("(%zu, %zu) ", pos_[step.index].row, pos_[step.index].col);
+    switch (step.move)
     {
         case Movement::Down:
             printf("Down\n");
@@ -38,61 +146,105 @@ void ChessmanStep::Print() const
             break;
     }
 }
-
-SingleNobleBoard::SingleNobleBoard(bool extend):
-    extend_(extend), chessman_num_(32)
-{
-    InitBoard();
-}
-
-void SingleNobleBoard::Move(ChessmanStep& step)
-{
-
-}
-
-void SingleNobleBoard::Back(ChessmanStep& step)
-{
-
-}
-
-void SingleNobleBoard::CopyHistory(vector<ChessmanStep>* steps) const
-{
-    if (steps == nullptr)
-    {
-        return;
-    }
-
-    *steps = std::move(vector<ChessmanStep>(history_));
-}
-
-void SingleNobleBoard::GetValidSteps(vector<ChessmanStep>* steps) const
-{
-
-}
-
 void SingleNobleBoard::InitBoard()
 {
-    size_t board_size;
     size_t chess_step;
-    // Add two rows and columns for board to restrict movement
     if (extend_)
     {
-        board_size = 11;
+        board_size_ = 11;
         chess_step = 2;
     }
     else
     {
-        board_size = 9;
+        board_size_ = 9;
         chess_step = 1;
     }
 
-    state_ = vector<vector<BoardState>>(board_size);
-    for (size_t i = 0; i < board_size; ++i)
+    // Generate the whole board
+    vector<vector<BoardState>> board(board_size_);
+    for (size_t i = 0; i < board_size_; ++i)
     {
-        state_[i] = vector<BoardState>(board_size, BoardState::Invalid);
+        board[i] = vector<BoardState>(board_size_, BoardState::Invalid);
     }
 
-    
+    for (size_t i = 3; i < board_size_ - 3; i += chess_step)
+    {
+        for (size_t j = 1; j < 3; ++j)
+        {
+            board[i][j] = BoardState::Occupied;
+            board[i][board_size_ - j - 1] = BoardState::Occupied;
+            board[j][i] = BoardState::Occupied;
+            board[board_size_ - j - 1][i] = BoardState::Occupied;
+        }
+        for (size_t j = 3; j < board_size_ - 3; j += chess_step)
+        {
+            board[i][j] = BoardState::Occupied;
+        }
+
+    }
+    board[board_size_ / 2][board_size_ / 2] = BoardState::Empty;
+
+    if (extend_)
+    {
+        for (size_t i = 4; i < 8; i += 2)
+            for (size_t j = 1; j < board_size_ - 1; ++j)
+            {
+                board[i][j] = BoardState::Empty;
+                board[j][i] = BoardState::Empty;
+            }
+    }
+
+    // Generate the state and its corresponding vectors
+    vector<vector<int>> board_num(board_size_);
+    for (size_t i = 0; i < board_size_; ++i)
+    {
+        board_num[i] = vector<int>(board_size_, -1);
+    }
+
+    state_.clear();
+    for (size_t i = 0; i < board_size_; ++i)
+        for (size_t j = 0; j < board_size_; ++j)
+        {
+            if (board[i][j] != BoardState::Invalid)
+            {
+                board_num[i][j] = state_.size();
+                state_.push_back(board[i][j]);
+                Position pos{i, j};
+                pos_.push_back(pos);
+            }
+        }
+
+    for (size_t i = 0; i < state_.size(); ++i)
+    {
+        vector<int> next(4, -1);
+        vector<int> move(4, -1);
+        int x = pos_[i].row;
+        int y = pos_[i].col;
+        for (int j = 0; j < 4; ++j)
+        {
+            next[j] = board_num[x + MOVE[j][0]][y + MOVE[j][1]];
+            if (next[j] >= 0)
+            {
+                move[j] = board_num[x + MOVE[j][0] * 2][y + MOVE[j][1] * 2];
+            }
+        }
+        next_index_.push_back(next);
+        move_index_.push_back(move);
+    }
+}
+
+void SingleNobleBoard::StateToBoard(vector<vector<BoardState>> *board) const
+{
+    *board = std::move(vector<vector<BoardState>>(board_size_));
+    for (size_t i = 0; i < board_size_; ++i)
+    {
+        (*board)[i] = vector<BoardState>(board_size_, BoardState::Invalid);
+    }
+
+    for (size_t i = 0; i < state_.size(); ++i)
+    {
+        (*board)[pos_[i].row][pos_[i].col] = state_[i];
+    }
 }
 }  // namespace ghk
 

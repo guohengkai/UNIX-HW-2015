@@ -41,7 +41,7 @@ bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
             {
                 return true;
             }
-            board.Back(valid_step[i]);
+            board.Back();
         }
     }
 
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
     for (size_t i = 0; i < best_res.size(); ++i)
     {
         printf("%zu: ", i);
-        best_res[i].Print();
+        board.PrintStep(best_res[i]);
     }
 
     return 0;
