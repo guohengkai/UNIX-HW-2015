@@ -4,7 +4,7 @@ INCS :=  $(PREFIX)
 CFLAGS := -Wall -Wunreachable-code -Werror -Wsign-compare -g -fPIC -std=c++11
 SOURCE := $(wildcard  *.cpp)
 OBJS := $(patsubst %.cpp, %.o, $(SOURCE))
-TARGETS=single_nobel
+TARGETS=single_noble
 
 all:$(TARGETS)
 $(TARGETS) : $(OBJS)

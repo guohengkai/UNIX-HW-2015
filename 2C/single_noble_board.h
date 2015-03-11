@@ -38,7 +38,7 @@ struct ChessmanStep
 class SingleNobleBoard
 {
 public:
-    explicit SingleNobleBoard(bool extend = false): chessman_num_(32);
+    explicit SingleNobleBoard(bool extend = false);
 
     void Move(ChessmanStep& step);
     void Back(ChessmanStep& step);
@@ -46,10 +46,13 @@ public:
     void CopyHistory(std::vector<ChessmanStep>* steps) const;
     void GetValidSteps(std::vector<ChessmanStep>* steps) const;
     
-    size_t chessman_num() { return chessman_num_; }
+    std::size_t chessman_num() { return chessman_num_; }
 
 private:
-    size_t chessman_num_;
+    virtual void InitBoard();
+
+    bool extend_;
+    std::size_t chessman_num_;
     std::vector<std::vector<BoardState>> state_;
     std::vector<ChessmanStep> history_;
 };

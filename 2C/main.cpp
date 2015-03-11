@@ -13,12 +13,12 @@ using std::vector;
 using ghk::ChessmanStep;
 using ghk::SingleNobleBoard;
 
-void DepthFirstSearch(int depth, SingleNobleBoard &board,
+bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
         vector<ChessmanStep>* best_res)
 {
     if (depth >= board.chessman_num() - 1)
     {
-        *best_res = board.steps();
+        board.CopyHistory(best_res);
         return true;  // Find the solution of one chessman
     }
     
@@ -29,7 +29,7 @@ void DepthFirstSearch(int depth, SingleNobleBoard &board,
     {
         if (best_res->size() < depth)
         {
-            *best_res = board.steps();
+            board.CopyHistory(best_res);
         }
     }
     else
@@ -53,7 +53,7 @@ int main(int argc, char** argv)
     bool extend = false;
     if (argc > 1)
     {
-        extend = atio(argv[1]) == 1 : true ? false;
+        extend = (atoi(argv[1]) == 1);
     }
 
     // Start DFS for solution
@@ -62,7 +62,7 @@ int main(int argc, char** argv)
     DepthFirstSearch(0, board, &best_res);
     
     // Print the solution
-    printf("The number of remained chessman is %d.\n",
+    printf("The number of remained chessman is %zu.\n",
             board.chessman_num() - best_res.size());
     printf("The solution:\n");
     for (size_t i = 0; i < best_res.size(); ++i)

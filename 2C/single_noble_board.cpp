@@ -39,9 +39,10 @@ void ChessmanStep::Print() const
     }
 }
 
-SingleNobleBoard::SingleNobleBoard(bool extend)
+SingleNobleBoard::SingleNobleBoard(bool extend):
+    extend_(extend), chessman_num_(32)
 {
-
+    InitBoard();
 }
 
 void SingleNobleBoard::Move(ChessmanStep& step)
@@ -61,12 +62,37 @@ void SingleNobleBoard::CopyHistory(vector<ChessmanStep>* steps) const
         return;
     }
 
-    *steps = std::move(vector(history_));
+    *steps = std::move(vector<ChessmanStep>(history_));
 }
 
 void SingleNobleBoard::GetValidSteps(vector<ChessmanStep>* steps) const
 {
 
+}
+
+void SingleNobleBoard::InitBoard()
+{
+    size_t board_size;
+    size_t chess_step;
+    // Add two rows and columns for board to restrict movement
+    if (extend_)
+    {
+        board_size = 11;
+        chess_step = 2;
+    }
+    else
+    {
+        board_size = 9;
+        chess_step = 1;
+    }
+
+    state_ = vector<vector<BoardState>>(board_size);
+    for (size_t i = 0; i < board_size; ++i)
+    {
+        state_[i] = vector<BoardState>(board_size, BoardState::Invalid);
+    }
+
+    
 }
 }  // namespace ghk
 
