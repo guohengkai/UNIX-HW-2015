@@ -10,8 +10,23 @@
 #include "single_noble_board.h"
 
 using std::vector;
+using ghk::BoardState;
 using ghk::ChessmanStep;
 using ghk::SingleNobleBoard;
+
+vector<vector<BoardState>> state_history;
+
+bool IsUnique(vector<BoardState> &state)
+{
+    for (size_t i = 0; i < state_history.size(); ++i)
+    {
+        if (state == state_history[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
 bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
         vector<ChessmanStep>* best_res)
@@ -37,9 +52,13 @@ bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
         for (size_t i = 0; i < valid_step.size(); ++i)
         {
             board.Move(valid_step[i]);
-            if (DepthFirstSearch(depth + 1, board, best_res))
+            if (IsUnique(board.state()))
             {
-                return true;
+                state_history.push_back(vector<BoardState>(board.state()));
+                if (DepthFirstSearch(depth + 1, board, best_res))
+                {
+                    return true;
+                }
             }
             board.Back();
         }

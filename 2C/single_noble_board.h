@@ -53,6 +53,7 @@ public:
     void PrintStep(ChessmanStep &step) const;
 
     std::size_t chessman_num() { return chessman_num_; }
+    std::vector<BoardState>& state() { return state_; }
 
 private:
     virtual void InitBoard();
