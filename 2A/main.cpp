@@ -34,13 +34,13 @@ bool DepthFirstSearch(NumberGame &game)
         {
             game.Write(valid_number_next[j]);
             flag &= DepthFirstSearch(game);
-            game.Erase(valid_number_next[j]);
+            game.Erase();
             if (!flag)
             {
                 break;
             }
         }
-        game.Erase(valid_number[i]);
+        game.Erase();
         
         if (flag)
         {
@@ -83,7 +83,7 @@ int main(int argc, char** argv)
     {
         game.Write(valid_number_A[i]);
         flag &= DepthFirstSearch(game);
-        game.Erase(valid_number_A[i]);
+        game.Erase();
         if (!flag)
         {
             break;
