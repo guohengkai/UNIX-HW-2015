@@ -37,9 +37,9 @@ bool IsUnique(size_t depth, vector<vector<BoardState>> &state)
 }
 
 bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
-        vector<ChessmanStep>* best_res)
+        vector<ChessmanStep>* best_res, size_t limit)
 {
-    if (depth >= board.chessman_num() - 1)
+    if (depth >= board.chessman_num() - limit)
     {
         board.CopyHistory(best_res);
         return true;  // Find the solution of one chessman
@@ -53,6 +53,7 @@ bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
         if (best_res->size() < depth)
         {
             board.CopyHistory(best_res);
+            // printf("%zu\n", depth);
         }
     }
     else
@@ -60,6 +61,7 @@ bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
         for (size_t i = 0; i < valid_step.size(); ++i)
         {
             board.Move(valid_step[i]);
+            /*
             vector<vector<BoardState>> states;
             board.GetTransformedState(&states);
             if (IsUnique(depth, states))
@@ -72,6 +74,10 @@ bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
                 {
                     return true;
                 }
+            } */
+            if (DepthFirstSearch(depth + 1, board, best_res, limit))
+            {
+                return true;
             }
             board.Back();
         }
@@ -90,8 +96,9 @@ int main(int argc, char** argv)
 
     // Start DFS for solution
     SingleNobleBoard board(extend);
+    size_t limit = extend ? 6 : 1;  // The best solution for 9*9 is 6.
     vector<ChessmanStep> best_res;
-    DepthFirstSearch(0, board, &best_res);
+    DepthFirstSearch(0, board, &best_res, limit);
     
     // Print the solution
     printf("The number of remained chessman is %zu.\n",
