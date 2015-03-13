@@ -94,6 +94,41 @@ void SingleNobleBoard::GetValidSteps(vector<ChessmanStep>* steps) const
     }
 }
 
+void SingleNobleBoard::GetTransformedState(vector<vector<BoardState>> *states) const
+{
+    if (states == nullptr)
+    {
+        return;
+    }
+    *states = std::move(vector<vector<BoardState>>());
+
+    for (size_t i = 0; i < transform_index_.size(); ++i)
+    {
+        vector<BoardState> state;
+        for (size_t j = 0; j < state_.size(); ++j)
+        {
+            state.push_back(state_[transform_index_[i][j]]);
+        }
+
+        bool flag = true;
+        if (i > 0)
+        {
+            for (size_t j = 0; j < states->size(); ++j)
+            {
+                if ((*states)[j] == state)
+                {
+                    flag = false;
+                    break;
+                }
+            }
+        }
+        if (flag)
+        {
+            states->push_back(state);
+        }
+    }
+}
+
 void SingleNobleBoard::PrintBoard() const
 {
     vector<vector<BoardState>> board;
@@ -231,6 +266,62 @@ void SingleNobleBoard::InitBoard()
         next_index_.push_back(next);
         move_index_.push_back(move);
     }
+
+    // Generate the roated and flip pattern
+    vector<size_t> state_num;
+    for (size_t i = 0; i < state_.size(); ++i)
+    {
+        state_num.push_back(i);
+    }
+    // Rotate the state
+    for (int i = 0; i < 4; ++i)
+    {
+        vector<size_t> transformed_num;
+        for (size_t i = 0; i < state_num.size(); ++i)
+        {
+            transformed_num.push_back(board_num
+                    [board_size_ - 1 - pos_[state_num[i]].col]
+                    [pos_[state_num[i]].row]);
+        }
+        state_num = transformed_num;
+        transform_index_.push_back(state_num);
+        /*
+        for (size_t i = 0; i < state_num.size(); ++i)
+        {
+            printf("%zu,", state_num[i]);
+        }
+        printf("\n"); */
+    }
+    // Flip the state
+    vector<size_t> fliped_num;
+    for (size_t i = 0; i < state_num.size(); ++i)
+    {
+        fliped_num.push_back(board_num
+                [pos_[state_num[i]].row]
+                [board_size_ - 1 - pos_[state_num[i]].col]);
+    }
+    state_num = fliped_num;
+    transform_index_.push_back(state_num);
+    // Rotate the state again
+    for (int i = 0; i < 3; ++i)
+    {
+        vector<size_t> transformed_num;
+        for (size_t i = 0; i < state_num.size(); ++i)
+        {
+            transformed_num.push_back(board_num
+                    [board_size_ - 1 - pos_[state_num[i]].col]
+                    [pos_[state_num[i]].row]);
+        }
+        state_num = transformed_num;
+        transform_index_.push_back(state_num);
+        /*
+        for (size_t i = 0; i < state_num.size(); ++i)
+        {
+            printf("%zu,", state_num[i]);
+        }
+        printf("\n"); */
+    }
+
 }
 
 void SingleNobleBoard::StateToBoard(vector<vector<BoardState>> *board) const

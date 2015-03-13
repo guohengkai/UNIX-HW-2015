@@ -14,15 +14,23 @@ using ghk::BoardState;
 using ghk::ChessmanStep;
 using ghk::SingleNobleBoard;
 
-vector<vector<BoardState>> state_history;
+vector<vector<vector<BoardState>>> state_history;
 
-bool IsUnique(vector<BoardState> &state)
+bool IsUnique(size_t depth, vector<vector<BoardState>> &state)
 {
-    for (size_t i = 0; i < state_history.size(); ++i)
+    if (depth + 1 > state_history.size())
     {
-        if (state == state_history[i])
+        state_history.push_back(vector<vector<BoardState>>());
+        return true;
+    }
+    for (size_t i = 0; i < state_history[depth].size(); ++i)
+    {
+        for (size_t j = 0; j < state.size(); ++j)
         {
-            return false;
+            if (state[j] == state_history[depth][i])
+            {
+                return false;
+            }
         }
     }
     return true;
@@ -52,9 +60,14 @@ bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
         for (size_t i = 0; i < valid_step.size(); ++i)
         {
             board.Move(valid_step[i]);
-            if (IsUnique(board.state()))
+            vector<vector<BoardState>> states;
+            board.GetTransformedState(&states);
+            if (IsUnique(depth, states))
             {
-                state_history.push_back(vector<BoardState>(board.state()));
+                for (size_t j = 0; j < states.size(); j++)
+                {
+                    state_history[depth].push_back(states[j]);
+                }
                 if (DepthFirstSearch(depth + 1, board, best_res))
                 {
                     return true;

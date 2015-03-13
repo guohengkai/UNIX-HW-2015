@@ -48,6 +48,7 @@ public:
 
     void CopyHistory(std::vector<ChessmanStep> *steps) const;
     void GetValidSteps(std::vector<ChessmanStep> *steps) const;
+    void GetTransformedState(std::vector<std::vector<BoardState>> *states) const;
     
     void PrintBoard() const;
     void PrintStep(ChessmanStep &step) const;
@@ -67,6 +68,7 @@ private:
     // and index all the possible movement
     std::vector<BoardState> state_;
     std::vector<Position> pos_;
+    std::vector<std::vector<std::size_t>> transform_index_;
     std::vector<std::vector<int>> next_index_;
     std::vector<std::vector<int>> move_index_;
     std::vector<ChessmanStep> history_;  // Save the movement history
