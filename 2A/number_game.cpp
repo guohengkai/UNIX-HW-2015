@@ -13,12 +13,12 @@ using std::vector;
 
 namespace ghk
 {
-void NumberGame::Write(int number)
+bool NumberGame::Write(int number)
 {
     if (state_[number - 1] != 0)
     {
         printf("Invalid operation.\n");
-        return;
+        return false;
     }
 
     ++step_;
@@ -30,7 +30,7 @@ void NumberGame::Write(int number)
            state_[i + number] = -step_;
        }
     }
-    // PrintState();
+    return true;
 }
 
 void NumberGame::Erase()
@@ -43,7 +43,6 @@ void NumberGame::Erase()
         }
     }
     --step_;
-    // PrintState();
 }
 
 void NumberGame::GetValidNumbers(vector<int> *valid_number)
@@ -66,7 +65,26 @@ void NumberGame::PrintState() const
 {
     for (int i = 0; i < max_number_; ++i)
     {
-        printf("%d ", state_[i]);
+        printf("%2d ", i + 1);
+    }
+    printf("\n");
+
+    for (int i = 0; i < max_number_; ++i)
+    {
+        char ch;
+        if (state_[i] > 0)
+        {
+            ch = '*';
+        }
+        else if (state_[i] < 0)
+        {
+            ch = 'x';
+        }
+        else
+        {
+            ch = ' ';
+        }
+        printf(" %c ", ch);
     }
     printf("\n");
 }

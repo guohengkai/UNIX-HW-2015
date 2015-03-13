@@ -17,7 +17,7 @@ public:
     explicit NumberGame(int max_number): step_(0), max_number_(max_number),
         state_(std::vector<int>(max_number, 0)) {}
 
-    void Write(int number);
+    bool Write(int number);
     void Erase();
 
     void GetValidNumbers(std::vector<int> *valid_number);

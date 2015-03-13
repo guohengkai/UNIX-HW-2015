@@ -1,0 +1,9 @@
+1. Environment
+    Ubuntu 13.04, gcc 4.7.3
+2. Usage
+    make
+    ./philosopher [person_num]
+        [no parameter]: person_num = 5
+        [person_num]: set the number of philosophers
+3. Algorithm
+    Each person wait for a random time to change their state, and the fork will choose to satisfy the requirement of a random person if conflited.

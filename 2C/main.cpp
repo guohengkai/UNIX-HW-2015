@@ -9,6 +9,8 @@
 #include <vector>
 #include "single_noble_board.h"
 
+#define REPEAT_CHECK 0
+
 using std::vector;
 using ghk::BoardState;
 using ghk::ChessmanStep;
@@ -42,6 +44,7 @@ bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
     if (depth >= board.chessman_num() - limit)
     {
         board.CopyHistory(best_res);
+        printf("Find solution: %zu\n", board.chessman_num() - best_res->size());
         return true;  // Find the solution of one chessman
     }
     
@@ -53,7 +56,7 @@ bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
         if (best_res->size() < depth)
         {
             board.CopyHistory(best_res);
-            // printf("%zu\n", depth);
+            printf("Find solution: %zu\n", board.chessman_num() - best_res->size());
         }
     }
     else
@@ -61,7 +64,8 @@ bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
         for (size_t i = 0; i < valid_step.size(); ++i)
         {
             board.Move(valid_step[i]);
-            /*
+
+#if REPEAT_CHECK
             vector<vector<BoardState>> states;
             board.GetTransformedState(&states);
             if (IsUnique(depth, states))
@@ -70,15 +74,17 @@ bool DepthFirstSearch(size_t depth, SingleNobleBoard &board,
                 {
                     state_history[depth].push_back(states[j]);
                 }
-                if (DepthFirstSearch(depth + 1, board, best_res))
+                if (DepthFirstSearch(depth + 1, board, best_res, limit))
                 {
                     return true;
                 }
-            } */
+            }
+#else
             if (DepthFirstSearch(depth + 1, board, best_res, limit))
             {
                 return true;
             }
+#endif
             board.Back();
         }
     }
@@ -96,7 +102,7 @@ int main(int argc, char** argv)
 
     // Start DFS for solution
     SingleNobleBoard board(extend);
-    size_t limit = extend ? 6 : 1;  // The best solution for 9*9 is 6.
+    size_t limit = extend ? 4 : 1;  // The best solution for 9*9 is 4
     vector<ChessmanStep> best_res;
     DepthFirstSearch(0, board, &best_res, limit);
     
@@ -104,10 +110,14 @@ int main(int argc, char** argv)
     printf("The number of remained chessman is %zu.\n",
             board.chessman_num() - best_res.size());
     printf("The solution:\n");
+    board = SingleNobleBoard(extend);  // Reset the board for output
+    board.PrintBoard();
     for (size_t i = 0; i < best_res.size(); ++i)
     {
         printf("%zu: ", i);
         board.PrintStep(best_res[i]);
+        board.Move(best_res[i]);
+        board.PrintBoard();
     }
 
     return 0;

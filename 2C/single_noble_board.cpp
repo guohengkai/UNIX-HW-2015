@@ -18,8 +18,7 @@ const int MOVE[][2] = {
 };
 
 
-SingleNobleBoard::SingleNobleBoard(bool extend):
-    extend_(extend), chessman_num_(32)
+SingleNobleBoard::SingleNobleBoard(bool extend): extend_(extend)
 {
     InitBoard();
 }
@@ -183,17 +182,15 @@ void SingleNobleBoard::PrintStep(ChessmanStep &step) const
 }
 void SingleNobleBoard::InitBoard()
 {
-    size_t chess_step;
     if (extend_)
     {
         board_size_ = 11;
-        chess_step = 2;
     }
     else
     {
         board_size_ = 9;
-        chess_step = 1;
     }
+    chessman_num_ = (board_size_ - 2) * (board_size_ - 2) - 17;
 
     // Generate the whole board
     vector<vector<BoardState>> board(board_size_);
@@ -202,32 +199,23 @@ void SingleNobleBoard::InitBoard()
         board[i] = vector<BoardState>(board_size_, BoardState::Invalid);
     }
 
-    for (size_t i = 3; i < board_size_ - 3; i += chess_step)
+    for (size_t i = 1; i < board_size_ - 1; ++i)
     {
-        for (size_t j = 1; j < 3; ++j)
-        {
-            board[i][j] = BoardState::Occupied;
-            board[i][board_size_ - j - 1] = BoardState::Occupied;
-            board[j][i] = BoardState::Occupied;
-            board[board_size_ - j - 1][i] = BoardState::Occupied;
-        }
-        for (size_t j = 3; j < board_size_ - 3; j += chess_step)
+        for (size_t j = 1; j < board_size_ - 1; ++j)
         {
             board[i][j] = BoardState::Occupied;
         }
-
     }
     board[board_size_ / 2][board_size_ / 2] = BoardState::Empty;
 
-    if (extend_)
-    {
-        for (size_t i = 4; i < 8; i += 2)
-            for (size_t j = 1; j < board_size_ - 1; ++j)
-            {
-                board[i][j] = BoardState::Empty;
-                board[j][i] = BoardState::Empty;
-            }
-    }
+    for (size_t i = 1; i < 3; ++i)
+        for (size_t j = 1; j < 3; ++j)
+        {
+            board[i][j] = BoardState::Invalid;
+            board[i][board_size_ - 1 - j] = BoardState::Invalid;
+            board[board_size_ - 1 - i][j] = BoardState::Invalid;
+            board[board_size_ - 1 - i][board_size_ - 1 - j] = BoardState::Invalid;
+        }
 
     // Generate the state and its corresponding vectors
     vector<vector<int>> board_num(board_size_);

@@ -1,0 +1,9 @@
+1. Environment
+    Ubuntu 13.04, gcc 4.7.3
+2. Usage
+    make
+    ./number_game [1]
+        [no parameter]: find the optimal strategy for players
+        1: play game with the computer
+3. Algorithm
+    simple enumerate all the possible steps for each player
