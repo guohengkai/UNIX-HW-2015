@@ -1,0 +1,9 @@
+1. Environment
+    Ubuntu 13.04, gcc 4.7.3
+2. Usage
+    make
+    ./word_check [num_word]
+        [no parameter]: num_word = 25
+        [num_word]: the number of words to be inputed
+3. Algorithm
+    use map in C++ STL for counting words

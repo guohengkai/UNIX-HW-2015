@@ -1,0 +1,7 @@
+1. Environment
+    Ubuntu 13.04, gcc 4.7.3
+2. Usage
+    make
+    ./pour_water
+3. Algorithm
+    use BFS to search the optimal steps for pouring water
