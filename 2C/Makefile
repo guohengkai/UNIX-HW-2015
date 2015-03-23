@@ -14,3 +14,6 @@ $(TARGETS) : $(OBJS)
 	$(CC) $(CFLAGS) $(addprefix -I,$(INCS)) -c $< -o $@
 clean:
 	rm -rf $(TARGETS) $(OBJS)
+test:
+	./$(TARGETS) 0
+	./$(TARGETS) 1
