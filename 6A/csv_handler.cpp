@@ -5,9 +5,7 @@
     > Created Time: Sat 28 Mar 2015 05:13:31 PM CST
  ************************************************************************/
 #include "csv_handler.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <cstdio>
 #include <string>
 #include <vector>
 
