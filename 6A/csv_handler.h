@@ -16,8 +16,11 @@ enum FileType
 {
     CSV = 0,
     BIN,
-    TXT
+    TXT,
+    NONE
 };
+
+const int MAX_BUFFER = 2048;
 
 class CsvHandler
 {

@@ -30,6 +30,7 @@ int main(int argc, char **argv)
         }
         else
         {
+            csv_handler.Print();
             string output_name(argv[2]);
             if (!csv_handler.Save(output_name))
             {
