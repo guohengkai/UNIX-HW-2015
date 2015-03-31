@@ -6,6 +6,7 @@
  ************************************************************************/
 #include <cstdio>
 #include <cctype>
+#include <ftw.h>
 #include <getopt.h>
 #include <string>
 
@@ -13,13 +14,60 @@ using std::string;
 
 void PrintUsage(FILE *stream, char *program_name)
 {
-    fprintf(stream, "Usage: %s [options] dir\n", program_name);
-    // fprintf(stream,);
+    fprintf(stream, "Usage: %s [options] dir_name\n", program_name);
+    fprintf(stream,
+            "   -h --help         Print help information\n"
+            "   -l --longer-than  Print files "
+            "longer than specified length(byte)\n"
+            "   -a --access-day   Print files that "
+            "accessed in specified days\n");
 }
 
-void PrintFileTree(string &dir_name, int file_length, int access_day)
+void GetTimeString(const time_t &time, string *time_str)
 {
-    
+    char str_buffer[50];
+    strftime(str_buffer, sizeof(str_buffer),
+            "%F %T", localtime(&time));
+    *time_str = string(str_buffer);
+}
+
+int DisplayInfo(const char *file_path, const struct stat *stat_buff,
+       int type_flag, struct FTW *ftw_buf)
+{
+    string type;
+    switch (type_flag)
+    {
+        case FTW_F:
+            type = "File";  // Regular file
+            break;
+        case FTW_D:
+            type = "Dir";  // Directory
+            break;
+        case FTW_SL:
+            type = "Link";  // Symbolic link
+            break;
+        default:
+            type = "";  // Unknown type
+    }
+
+    string atime_str;
+    GetTimeString(stat_buff->st_atime, &atime_str);
+    string mtime_str;
+    GetTimeString(stat_buff->st_mtime, &mtime_str);
+
+    printf("%-40s %-5s %-5d %-8lld %-20s %-20s\n", file_path, type.c_str(),
+            ftw_buf->level, static_cast<long long>(stat_buff->st_size),
+            atime_str.c_str(), mtime_str.c_str());
+    return 0;
+}
+
+int PrintFileTree(string &dir_name, int file_length, int access_day)
+{
+    printf("%-40s %-5s %-5s %-8s %-20s %-20s\n", "File Name", "Type",
+            "Depth", "Size", "Last Access Time", "Last Modified Time");
+    printf("---------------------------------------------------"
+           "---------------------------------------------------\n");
+    return nftw(dir_name.c_str(), DisplayInfo, 500, FTW_PHYS);
 }
 
 int main(int argc, char **argv)
@@ -73,12 +121,11 @@ int main(int argc, char **argv)
 
     if (optind > argc - 1)
     {
-        printf("Error: require a directory name\n");
+        printf("Error: require a directory name (-h for help)\n");
         return 1;
     }
 
     string dir_name(argv[optind]);
-    PrintFileTree(dir_name, file_length, access_day);
-    return 0;
+    return PrintFileTree(dir_name, file_length, access_day);
 }
 
