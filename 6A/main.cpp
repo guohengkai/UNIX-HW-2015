@@ -17,6 +17,9 @@ int main(int argc, char **argv)
     if (argc < 2)
     {
         printf("usage: csv_handler <input_file> [<output_file>]\n");
+        printf("    *.csv: CSV file format\n");
+        printf("    *.bin: Binary file format\n");
+        printf("    *.txt: TXT file format(No support for loading)\n");
         return -1;
     }
 
@@ -34,13 +37,17 @@ int main(int argc, char **argv)
             string output_name(argv[2]);
             if (!csv_handler.Save(output_name))
             {
-                printf("Fail to save binary file.\n");
+                printf("Fail to save file.\n");
+            }
+            else
+            {
+                printf("Success to save file.\n");
             }
         }
     }
     else
     {
-        printf("Fail to load csv data.\n");
+        printf("Fail to load file.\n");
     }
 
     return 0;

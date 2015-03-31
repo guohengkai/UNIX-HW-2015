@@ -6,6 +6,7 @@
  ************************************************************************/
 #include "csv_handler.h"
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -80,8 +81,20 @@ bool CsvHandler::Print() const
     return Save(stdout, FileType::TXT);
 }
 
+void WriteSizet(size_t size, FILE *file)
+{
+    fputc(static_cast<char>(size / 256), file);
+    fputc(static_cast<char>(size % 256), file);
+}
+
 bool CsvHandler::Save(FILE *file, FileType type) const
 {
+    if (data_.empty())
+    {
+        printf("No data to be saved.\n");
+        return false;
+    }
+
     if (type == FileType::NONE)
     {
         printf("The file type does not support saving.\n");
@@ -134,7 +147,22 @@ bool CsvHandler::Save(FILE *file, FileType type) const
     }
     else if (type == FileType::BIN)
     {
+        // Write the identifier of binary file
+        fwrite(BIN_HEAD, sizeof(char), BIN_HEAD_LEN, file);
 
+        // Write number of row and column (Max: 256 * 256 - 1)
+        WriteSizet(data_.size(), file);
+        WriteSizet(data_[0].size(), file);
+
+        // Write table data
+        for (size_t i = 0; i < data_.size(); ++i)
+            for (size_t j = 0; j < data_[i].size(); ++j)
+            {
+                WriteSizet(data_[i][j].size(), file);  // Length
+                fwrite(data_[i][j].c_str(), sizeof(char),
+                       data_[i][j].size(), file);  // Data
+                fputc(BIN_PARSER, file);  // Parser
+            }
     }
     else  // FileType::TXT
     {
@@ -195,6 +223,17 @@ bool CsvHandler::Save(FILE *file, FileType type) const
     return true;
 }
 
+size_t ReadSizet(FILE *file)
+{
+    size_t result = 0;
+    for (int i = 0; i < 2; ++i)
+    {
+        int temp_byte = fgetc(file);
+        result = result * 256 + temp_byte;
+    }
+    return result;
+}
+
 bool CsvHandler::Load(FILE *file, FileType type)
 {
     if (type == FileType::TXT || type == FileType::NONE)
@@ -207,8 +246,8 @@ bool CsvHandler::Load(FILE *file, FileType type)
     data_.clear();
     if (type == FileType::CSV)
     {
-        bool quote = false;
-        bool true_quote = false;
+        bool is_escape = false;
+        bool wait_quote = false;
         vector<string> current_row;
         string current_str;
         char ch;
@@ -219,18 +258,18 @@ bool CsvHandler::Load(FILE *file, FileType type)
             {
                 if (current_str.empty())
                 {
-                    quote = true;
+                    is_escape = true;
                 }
                 else
                 {
-                    if (true_quote)
+                    if (wait_quote)
                     {
                         current_str.append(1, '"');
-                        true_quote = false;
+                        wait_quote = false;
                     }
                     else
                     {
-                        true_quote = true;
+                        wait_quote = true;
                     }
                 }
             }
@@ -238,19 +277,19 @@ bool CsvHandler::Load(FILE *file, FileType type)
             {
                 if (ch == ',' || ch == '\n' || ch == EOF)
                 {
-                    if (true_quote && !quote)
+                    if (wait_quote && !is_escape)
                     {
                         printf("Error when parsing the csv file"
                                " with wrong quote.\n");
                         data_.clear();
                         return false;
                     }
-                    else if (quote && true_quote)  // end of string
+                    else if (is_escape && wait_quote)  // end of string
                     {
-                        quote = false;
-                        true_quote = false;
+                        is_escape = false;
+                        wait_quote = false;
                     }
-                    else if (quote && !true_quote)  // escape or die
+                    else if (is_escape && !wait_quote)  // escape or die
                     {
                         if (ch == EOF)
                         {
@@ -294,7 +333,41 @@ bool CsvHandler::Load(FILE *file, FileType type)
     }
     else  // FileType::BIN
     {
+        // Read the identifier of binary file
+        char head[BIN_HEAD_LEN + 1];
+        fread(head, sizeof(char), BIN_HEAD_LEN, file);
+        if (strcmp(head, BIN_HEAD) != 0)
+        {
+            printf("Error header in binary file format: %s.\n", head);
+            return false;
+        }
+        
+        // Read number of rows and columns
+        size_t rows = ReadSizet(file);
+        size_t cols = ReadSizet(file);
+        for (size_t i = 0; i < rows; ++i)
+        {
+            vector<string> row_data;
+            for (size_t j = 0; j < cols; ++j)
+            {
+                size_t len = ReadSizet(file);
+                char temp[65536];
+                fread(temp, sizeof(char), len, file);
+                temp[len] = '\0';
+                string data(temp);
+                row_data.push_back(data);
 
+                int parser = fgetc(file);
+                if (parser != BIN_PARSER)
+                {
+                    printf("Error parser in binary file format"
+                           " in (%zu, %zu): %d.\n", i, j, parser);
+                    data_.clear();
+                    return false;
+                }
+            }
+            data_.push_back(row_data);
+        }
     }
 
     has_data_ = true;

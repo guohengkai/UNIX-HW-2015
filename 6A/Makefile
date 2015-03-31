@@ -15,4 +15,6 @@ $(TARGETS) : $(OBJS)
 clean:
 	rm -rf $(TARGETS) $(OBJS)
 test:
-	./$(TARGETS)
+	./$(TARGETS) test.csv test.bin
+	./$(TARGETS) test.bin
+

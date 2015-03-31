@@ -21,6 +21,9 @@ enum FileType
 };
 
 const int MAX_BUFFER = 2048;
+const char BIN_HEAD[] = "BINARY";
+const int BIN_HEAD_LEN = 6;
+const int BIN_PARSER = 255;
 
 class CsvHandler
 {
