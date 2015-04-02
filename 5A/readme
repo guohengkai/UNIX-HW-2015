@@ -1,0 +1,6 @@
+1. Environment
+    Ubuntu 13.04, gcc 4.7.3
+2. Usage
+    Use "./freport -h" for details. And use "make test" for testing,
+3. Algorithm
+    Use depth first search to transversal the directory, and print the information of file fullpath, file type, file size, last access time and last modified time. "freport" can filter the files smaller than specified size(-l) or the files accessed before specified number of days(-a).

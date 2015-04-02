@@ -15,14 +15,10 @@
 #include <unistd.h>
 
 #include <map>
-#include <set>
 #include <string>
-#include <vector>
 
 using std::map;
-using std::set;
 using std::string;
-using std::vector;
 
 const int SECS_IN_DAY = 86400;
 
@@ -91,8 +87,7 @@ int DisplayInfo(const char *file_path, const struct stat *stat_buff,
 int MyFtw(const char *dir_path,
         int (*fn) (const char*, const struct stat*,
             const map<char, int>&, int),
-        const map<char, int> &option_param, int depth,
-        set<ino_t> &inode_set)
+        const map<char, int> &option_param, int depth)
 {
     struct stat stat_buff;
     int flag = lstat(dir_path, &stat_buff);
@@ -101,7 +96,6 @@ int MyFtw(const char *dir_path,
         perror(dir_path);
         return 1;
     }
-    inode_set.insert(stat_buff.st_ino);
 
     fn(dir_path, &stat_buff, option_param, depth);
 
@@ -137,15 +131,13 @@ int MyFtw(const char *dir_path,
             perror(sub_path.c_str());
             return 1;
         }
-        if (inode_set.count(temp_buff.st_ino) == 0)
+
+        result = MyFtw(sub_path.c_str(), fn,
+                option_param, depth + 1);
+        if (result != 0)
         {
-            result = MyFtw(sub_path.c_str(), fn,
-                    option_param, depth + 1, inode_set);
-            if (result != 0)
-            {
-                closedir(dir_ptr);
-                return result;
-            }
+            closedir(dir_ptr);
+            return result;
         }
     }
     closedir(dir_ptr);
@@ -159,8 +151,7 @@ int PrintFileTree(const char *dir_name, const map<char, int> &option_param)
     printf("---------------------------------------------------"
            "---------------------------------------------------\n");
 
-    set<ino_t> inode_set;
-    return MyFtw(dir_name, DisplayInfo, option_param, 0, inode_set);
+    return MyFtw(dir_name, DisplayInfo, option_param, 0);
 }
 
 int main(int argc, char **argv)
