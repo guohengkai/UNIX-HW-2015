@@ -4,13 +4,27 @@
     > Description: Main program of freport for homework 5A
     > Created Time: Mon 30 Mar 2015 08:18:14 PM CST
  ************************************************************************/
-#include <cstdio>
 #include <cctype>
-#include <ftw.h>
+#include <cstdio>
+#include <cstring>
+#include <dirent.h>
 #include <getopt.h>
-#include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
+
+using std::map;
+using std::set;
 using std::string;
+using std::vector;
+
+const int SECS_IN_DAY = 86400;
 
 void PrintUsage(FILE *stream, char *program_name)
 {
@@ -32,22 +46,35 @@ void GetTimeString(const time_t &time, string *time_str)
 }
 
 int DisplayInfo(const char *file_path, const struct stat *stat_buff,
-       int type_flag, struct FTW *ftw_buf)
+       const map<char, int> &option_param, int depth)
 {
-    string type;
-    switch (type_flag)
+    if ((option_param.count('l') > 0
+            && stat_buff->st_size < option_param.at('l'))
+            || (option_param.count('a') > 0
+            && time(NULL) - stat_buff->st_atime
+                > option_param.at('a') * SECS_IN_DAY))
     {
-        case FTW_F:
-            type = "File";  // Regular file
-            break;
-        case FTW_D:
-            type = "Dir";  // Directory
-            break;
-        case FTW_SL:
-            type = "Link";  // Symbolic link
-            break;
-        default:
-            type = "";  // Unknown type
+        // Exit when the file doesn't satisfy the condition
+        return 0;
+    }
+
+    string type;
+    mode_t mode = stat_buff->st_mode;
+    if (S_ISREG(mode))
+    {
+        type = "File";  // Regular file
+    }
+    else if (S_ISDIR(mode))
+    {
+        type = "Dir";  // Directory
+    }
+    else if (S_ISLNK(mode))
+    {
+        type = "Link";  // Symbolic link
+    }
+    else
+    {
+        type = "";  // Unknown type
     }
 
     string atime_str;
@@ -56,18 +83,84 @@ int DisplayInfo(const char *file_path, const struct stat *stat_buff,
     GetTimeString(stat_buff->st_mtime, &mtime_str);
 
     printf("%-40s %-5s %-5d %-8lld %-20s %-20s\n", file_path, type.c_str(),
-            ftw_buf->level, static_cast<long long>(stat_buff->st_size),
+            depth, static_cast<long long>(stat_buff->st_size),
             atime_str.c_str(), mtime_str.c_str());
     return 0;
 }
 
-int PrintFileTree(string &dir_name, int file_length, int access_day)
+int MyFtw(const char *dir_path,
+        int (*fn) (const char*, const struct stat*,
+            const map<char, int>&, int),
+        const map<char, int> &option_param, int depth,
+        set<ino_t> &inode_set)
+{
+    struct stat stat_buff;
+    int flag = lstat(dir_path, &stat_buff);
+    if (flag == -1)
+    {
+        perror(dir_path);
+        return 1;
+    }
+    inode_set.insert(stat_buff.st_ino);
+
+    fn(dir_path, &stat_buff, option_param, depth);
+
+    if (!S_ISDIR(stat_buff.st_mode))
+    {
+        // Not a directory, stop walking
+        return 0;
+    }
+
+    DIR *dir_ptr;
+    if ((dir_ptr = opendir(dir_path)) == nullptr)
+    {
+        // Fail to open the directory
+        perror(dir_path);
+        return 1;
+    }
+
+    struct dirent *entry;
+    // Traversal all the entries in the directory
+    while ((entry = readdir(dir_ptr)) != nullptr)
+    {
+        if (strcmp(entry->d_name, ".") == 0
+                || strcmp(entry->d_name, "..") == 0)
+        {
+            continue;  // Skip "." and ".."
+        }
+
+        string sub_path = string(dir_path) + "/" + entry->d_name;
+        struct stat temp_buff;
+        int result = lstat(sub_path.c_str(), &temp_buff);
+        if (result == -1)
+        {
+            perror(sub_path.c_str());
+            return 1;
+        }
+        if (inode_set.count(temp_buff.st_ino) == 0)
+        {
+            result = MyFtw(sub_path.c_str(), fn,
+                    option_param, depth + 1, inode_set);
+            if (result != 0)
+            {
+                closedir(dir_ptr);
+                return result;
+            }
+        }
+    }
+    closedir(dir_ptr);
+    return 0;
+}
+
+int PrintFileTree(const char *dir_name, const map<char, int> &option_param)
 {
     printf("%-40s %-5s %-5s %-8s %-20s %-20s\n", "File Name", "Type",
-            "Depth", "Size", "Last Access Time", "Last Modified Time");
+           "Depth", "Size", "Last Access Time", "Last Modified Time");
     printf("---------------------------------------------------"
            "---------------------------------------------------\n");
-    return nftw(dir_name.c_str(), DisplayInfo, 500, FTW_PHYS);
+
+    set<ino_t> inode_set;
+    return MyFtw(dir_name, DisplayInfo, option_param, 0, inode_set);
 }
 
 int main(int argc, char **argv)
@@ -81,9 +174,9 @@ int main(int argc, char **argv)
         {NULL, 0, NULL, 0}
     };
 
+
+    map<char, int> option_param;
     int opt;
-    int file_length = 0;
-    int access_day = 0;
     while ((opt = getopt_long(argc, argv,
                     short_opts, long_opts, NULL)) != -1)
     {
@@ -93,10 +186,10 @@ int main(int argc, char **argv)
                 PrintUsage(stdout, argv[0]);
                 return 0;
             case 'l':
-                file_length = atoi(optarg);
+                option_param['l'] = atoi(optarg);
                 break;
             case 'a':
-                access_day = atoi(optarg);
+                option_param['a'] = atoi(optarg);
                 break;
             case '?':
                 if (optopt == 'l' || optopt == 'a')
@@ -125,7 +218,6 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    string dir_name(argv[optind]);
-    return PrintFileTree(dir_name, file_length, access_day);
+    return PrintFileTree(argv[optind], option_param);
 }
 
