@@ -81,10 +81,135 @@ bool CsvHandler::Print() const
     return Save(stdout, FileType::TXT);
 }
 
+bool CsvHandler::SaveCsv(FILE *file) const
+{
+    for (size_t i = 0; i < data_.size(); ++i)
+    {
+        for (size_t j = 0; j < data_[i].size(); ++j)
+        {
+            string temp = data_[i][j];
+            bool need_quote = false;
+            size_t k = 0;
+            while (k < temp.size())
+            {
+                if (temp[k] == '\n' || temp[k] == ',')
+                {
+                    need_quote = true;
+                }
+                else if (temp[k] == '"')
+                {
+                    if (k == 0 || k + 1 == temp.size())
+                    {
+                        need_quote = true;
+                    }
+                    temp.insert(k, 1, '"');
+                    ++k;
+                }
+                ++k;
+            }
+
+            if (need_quote)
+            {
+                temp.insert(0, 1, '"');
+                temp.append(1, '"');
+            }
+            fprintf(file, "%s", temp.c_str());
+            if (j + 1 < data_[i].size())
+            {
+                fprintf(file, ",");
+            }
+            else
+            {
+                fprintf(file, "\n");
+            }
+        }
+    }
+    return true;
+}
+
 void WriteSizet(size_t size, FILE *file)
 {
     fputc(static_cast<char>(size / 256), file);
     fputc(static_cast<char>(size % 256), file);
+}
+
+bool CsvHandler::SaveBin(FILE *file) const
+{
+    // Write the identifier of binary file
+    fwrite(BIN_HEAD, sizeof(char), BIN_HEAD_LEN, file);
+
+    // Write number of row and column (Max: 256 * 256 - 1)
+    WriteSizet(data_.size(), file);
+    WriteSizet(data_[0].size(), file);
+
+    // Write table data
+    for (size_t i = 0; i < data_.size(); ++i)
+        for (size_t j = 0; j < data_[i].size(); ++j)
+        {
+            WriteSizet(data_[i][j].size(), file);  // Length
+            fwrite(data_[i][j].c_str(), sizeof(char),
+                   data_[i][j].size(), file);  // Data
+            fputc(BIN_PARSER, file);  // Parser
+        }
+
+    return true;
+}
+
+bool CsvHandler::SaveTxt(FILE *file) const
+{
+    vector<size_t> col_len;
+    for (size_t i = 0; i < data_[0].size(); ++i)
+    {
+        col_len.push_back(data_[0][i].size());
+    }
+    
+    for (size_t i = 1; i < data_.size(); ++i)
+        for (size_t j = 0; j < data_[i].size(); ++j)
+        {
+            col_len[j] = std::max(col_len[j], data_[i][j].size());
+        }
+
+    for (size_t i = 0; i < col_len.size(); ++i)
+    {
+        fprintf(file, " ");
+        for (size_t j = 0; j < col_len[i]; ++j)
+        {
+            fprintf(file, "-");
+        }
+    }
+    fprintf(file, "\n");
+
+    for (size_t i = 0; i < data_.size(); ++i)
+    {
+        for (size_t j = 0; j < data_[i].size(); ++j)
+        {
+            string temp = data_[i][j];
+            size_t pos;
+            while ((pos = temp.find("\n")) != string::npos)
+            {
+                // Replace \n with '_' for simple print
+                temp.replace(pos, 1, "_");  
+            }
+            fprintf(file, "|%s", temp.c_str());
+            auto diff = col_len[j] - data_[i][j].size();
+            for (size_t k = 0; k < diff; ++k)
+            {
+                fprintf(file, " ");
+            }
+        }
+        fprintf(file, "|\n");
+
+        for (size_t j = 0; j < col_len.size(); ++j)
+        {
+            fprintf(file, " ");
+            for (size_t k = 0; k < col_len[j]; ++k)
+            {
+                fprintf(file, "-");
+            }
+        }
+        fprintf(file, "\n");
+    }
+    return true;
 }
 
 bool CsvHandler::Save(FILE *file, FileType type) const
@@ -103,123 +228,109 @@ bool CsvHandler::Save(FILE *file, FileType type) const
 
     if (type == FileType::CSV)
     {
-        for (size_t i = 0; i < data_.size(); ++i)
-        {
-            for (size_t j = 0; j < data_[i].size(); ++j)
-            {
-                string temp = data_[i][j];
-                bool need_quote = false;
-                size_t k = 0;
-                while (k < temp.size())
-                {
-                    if (temp[k] == '\n' || temp[k] == ',')
-                    {
-                        need_quote = true;
-                    }
-                    else if (temp[k] == '"')
-                    {
-                        if (k == 0 || k + 1 == temp.size())
-                        {
-                            need_quote = true;
-                        }
-                        temp.insert(k, 1, '"');
-                        ++k;
-                    }
-                    ++k;
-                }
-
-                if (need_quote)
-                {
-                    temp.insert(0, 1, '"');
-                    temp.append(1, '"');
-                }
-                fprintf(file, "%s", temp.c_str());
-                if (j + 1 < data_[i].size())
-                {
-                    fprintf(file, ",");
-                }
-                else
-                {
-                    fprintf(file, "\n");
-                }
-            }
-        }
+        return SaveCsv(file);
     }
     else if (type == FileType::BIN)
     {
-        // Write the identifier of binary file
-        fwrite(BIN_HEAD, sizeof(char), BIN_HEAD_LEN, file);
-
-        // Write number of row and column (Max: 256 * 256 - 1)
-        WriteSizet(data_.size(), file);
-        WriteSizet(data_[0].size(), file);
-
-        // Write table data
-        for (size_t i = 0; i < data_.size(); ++i)
-            for (size_t j = 0; j < data_[i].size(); ++j)
-            {
-                WriteSizet(data_[i][j].size(), file);  // Length
-                fwrite(data_[i][j].c_str(), sizeof(char),
-                       data_[i][j].size(), file);  // Data
-                fputc(BIN_PARSER, file);  // Parser
-            }
+        return SaveBin(file);
     }
     else  // FileType::TXT
     {
-        vector<size_t> col_len;
-        for (size_t i = 0; i < data_[0].size(); ++i)
+        return SaveTxt(file);
+    }
+}
+
+bool CsvHandler::LoadCsv(FILE *file)
+{
+    has_data_ = false;
+    data_.clear();
+    
+    bool is_escape = false;
+    bool wait_quote = false;
+    vector<string> current_row;
+    string current_str;
+    char ch;
+    while (true)
+    {
+        ch = fgetc(file);
+        if (ch == '"')
         {
-            col_len.push_back(data_[0][i].size());
+            if (current_str.empty())
+            {
+                is_escape = true;
+            }
+            else
+            {
+                if (wait_quote)
+                {
+                    current_str.append(1, '"');
+                    wait_quote = false;
+                }
+                else
+                {
+                    wait_quote = true;
+                }
+            }
         }
-        
-        for (size_t i = 1; i < data_.size(); ++i)
-            for (size_t j = 0; j < data_[i].size(); ++j)
-            {
-                col_len[j] = std::max(col_len[j], data_[i][j].size());
-            }
-
-        for (size_t i = 0; i < col_len.size(); ++i)
+        else
         {
-            fprintf(file, " ");
-            for (size_t j = 0; j < col_len[i]; ++j)
+            if (ch == ',' || ch == '\n' || ch == EOF)
             {
-                fprintf(file, "-");
-            }
-        }
-        fprintf(file, "\n");
+                if (wait_quote && !is_escape)
+                {
+                    printf("Error when parsing the csv file"
+                           " with wrong quote.\n");
+                    data_.clear();
+                    return false;
+                }
+                else if (is_escape && wait_quote)  // end of string
+                {
+                    is_escape = false;
+                    wait_quote = false;
+                }
+                else if (is_escape && !wait_quote)  // escape or die
+                {
+                    if (ch == EOF)
+                    {
+                        printf("Error when parsing the csv file"
+                               " with wrong quote before EOF.\n");
+                        data_.clear();
+                        return false;
+                    }
+                    current_str.append(1, ch);
+                    continue;
+                }
 
-        for (size_t i = 0; i < data_.size(); ++i)
-        {
-            for (size_t j = 0; j < data_[i].size(); ++j)
-            {
-                string temp = data_[i][j];
-                size_t pos;
-                while ((pos = temp.find("\n")) != string::npos)
+                current_row.push_back(current_str);
+                current_str = "";
+                if (ch == '\n')
                 {
-                    // Replace \n with '_' for simple print
-                    temp.replace(pos, 1, "_");  
+                    // Check the number of column
+                    if (!data_.empty() && data_[0].size() != current_row.size())
+                    {
+                        printf("Error when parsing the csv file"
+                               " with wrong column at row %zu.\n",
+                               data_.size() + 1);
+                        data_.clear();
+                        return false;
+                    }
+                    data_.push_back(current_row);
+                    current_row.clear();
                 }
-                fprintf(file, "|%s", temp.c_str());
-                auto diff = col_len[j] - data_[i][j].size();
-                for (size_t k = 0; k < diff; ++k)
+                else if (ch == EOF)
                 {
-                    fprintf(file, " ");
+                    break;
                 }
-            }
-            fprintf(file, "|\n");
 
-            for (size_t j = 0; j < col_len.size(); ++j)
-            {
-                fprintf(file, " ");
-                for (size_t k = 0; k < col_len[j]; ++k)
-                {
-                    fprintf(file, "-");
-                }
             }
-            fprintf(file, "\n");
+            else
+            {
+                current_str.append(1, ch);
+            }
         }
     }
 
+    has_data_ = true;
     return true;
 }
 
@@ -234,6 +345,51 @@ size_t ReadSizet(FILE *file)
     return result;
 }
 
+bool CsvHandler::LoadBin(FILE *file)
+{
+    has_data_ = false;
+    data_.clear();
+
+    // Read the identifier of binary file
+    char head[BIN_HEAD_LEN + 1];
+    fread(head, sizeof(char), BIN_HEAD_LEN, file);
+    if (strcmp(head, BIN_HEAD) != 0)
+    {
+        printf("Error header in binary file format: %s.\n", head);
+        return false;
+    }
+    
+    // Read number of rows and columns
+    size_t rows = ReadSizet(file);
+    size_t cols = ReadSizet(file);
+    for (size_t i = 0; i < rows; ++i)
+    {
+        vector<string> row_data;
+        for (size_t j = 0; j < cols; ++j)
+        {
+            size_t len = ReadSizet(file);
+            char temp[65536];
+            fread(temp, sizeof(char), len, file);
+            temp[len] = '\0';
+            string data(temp);
+            row_data.push_back(data);
+
+            int parser = fgetc(file);
+            if (parser != BIN_PARSER)
+            {
+                printf("Error parser in binary file format"
+                       " in (%zu, %zu): %d.\n", i, j, parser);
+                data_.clear();
+                return false;
+            }
+        }
+        data_.push_back(row_data);
+    }
+
+    has_data_ = true;
+    return true;
+}
+
 bool CsvHandler::Load(FILE *file, FileType type)
 {
     if (type == FileType::TXT || type == FileType::NONE)
@@ -242,136 +398,15 @@ bool CsvHandler::Load(FILE *file, FileType type)
         return false;
     }
     
-    has_data_ = false;
-    data_.clear();
     if (type == FileType::CSV)
     {
-        bool is_escape = false;
-        bool wait_quote = false;
-        vector<string> current_row;
-        string current_str;
-        char ch;
-        while (true)
-        {
-            ch = fgetc(file);
-            if (ch == '"')
-            {
-                if (current_str.empty())
-                {
-                    is_escape = true;
-                }
-                else
-                {
-                    if (wait_quote)
-                    {
-                        current_str.append(1, '"');
-                        wait_quote = false;
-                    }
-                    else
-                    {
-                        wait_quote = true;
-                    }
-                }
-            }
-            else
-            {
-                if (ch == ',' || ch == '\n' || ch == EOF)
-                {
-                    if (wait_quote && !is_escape)
-                    {
-                        printf("Error when parsing the csv file"
-                               " with wrong quote.\n");
-                        data_.clear();
-                        return false;
-                    }
-                    else if (is_escape && wait_quote)  // end of string
-                    {
-                        is_escape = false;
-                        wait_quote = false;
-                    }
-                    else if (is_escape && !wait_quote)  // escape or die
-                    {
-                        if (ch == EOF)
-                        {
-                            printf("Error when parsing the csv file"
-                                   " with wrong quote before EOF.\n");
-                            data_.clear();
-                            return false;
-                        }
-                        current_str.append(1, ch);
-                        continue;
-                    }
-
-                    current_row.push_back(current_str);
-                    current_str = "";
-                    if (ch == '\n')
-                    {
-                        // Check the number of column
-                        if (!data_.empty() && data_[0].size() != current_row.size())
-                        {
-                            printf("Error when parsing the csv file"
-                                   " with wrong column at row %zu.\n",
-                                   data_.size() + 1);
-                            data_.clear();
-                            return false;
-                        }
-                        data_.push_back(current_row);
-                        current_row.clear();
-                    }
-                    else if (ch == EOF)
-                    {
-                        break;
-                    }
-
-                }
-                else
-                {
-                    current_str.append(1, ch);
-                }
-            }
-        }
+        return LoadCsv(file);
     }
     else  // FileType::BIN
     {
-        // Read the identifier of binary file
-        char head[BIN_HEAD_LEN + 1];
-        fread(head, sizeof(char), BIN_HEAD_LEN, file);
-        if (strcmp(head, BIN_HEAD) != 0)
-        {
-            printf("Error header in binary file format: %s.\n", head);
-            return false;
-        }
-        
-        // Read number of rows and columns
-        size_t rows = ReadSizet(file);
-        size_t cols = ReadSizet(file);
-        for (size_t i = 0; i < rows; ++i)
-        {
-            vector<string> row_data;
-            for (size_t j = 0; j < cols; ++j)
-            {
-                size_t len = ReadSizet(file);
-                char temp[65536];
-                fread(temp, sizeof(char), len, file);
-                temp[len] = '\0';
-                string data(temp);
-                row_data.push_back(data);
-
-                int parser = fgetc(file);
-                if (parser != BIN_PARSER)
-                {
-                    printf("Error parser in binary file format"
-                           " in (%zu, %zu): %d.\n", i, j, parser);
-                    data_.clear();
-                    return false;
-                }
-            }
-            data_.push_back(row_data);
-        }
+        return LoadBin(file);
     }
 
-    has_data_ = true;
-    return true;
 }
 
 FileType CsvHandler::GetFileTypeFromName(string &file_name) const

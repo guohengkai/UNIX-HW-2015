@@ -37,14 +37,22 @@ public:
 
     inline bool has_data() const { return has_data_; }
 
+protected:
+    virtual bool SaveCsv(FILE *file) const;
+    virtual bool SaveBin(FILE *file) const;
+    virtual bool SaveTxt(FILE *file) const;
+
+    virtual bool LoadCsv(FILE *file);
+    virtual bool LoadBin(FILE *file);
+
+    bool has_data_;
+    std::vector<std::vector<std::string>> data_;
+
 private:
     bool Save(FILE *file, FileType type) const;
     bool Load(FILE *file, FileType type);
 
     FileType GetFileTypeFromName(std::string &file_name) const;
-
-    bool has_data_;
-    std::vector<std::vector<std::string>> data_;
 };
 }  // namespace ghk
 
