@@ -1,0 +1,6 @@
+1. Environment
+    Ubuntu 13.04, gcc 4.7.3
+2. Usage
+    Use "./csv_map_reduce" for details. And use "make test" for testing, It depends on homework 6A.
+3. Algorithm
+    Read csv file using CsvHandler. Then fork new process to save the data into small binary file. At last load files one by one and copy them into a big binary file. Use waitpid() to confirm the existence of small files.

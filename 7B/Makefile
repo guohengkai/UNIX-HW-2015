@@ -15,4 +15,12 @@ $(TARGETS) : $(OBJS)
 clean:
 	rm -rf $(TARGETS) $(OBJS)
 test:
-	./$(TARGETS)
+	cd ../6A
+	make
+	cd ../7B
+	./$(TARGETS) ../6A/test.csv test.bin
+	../6A/csv_convert_print test_0.bin
+	../6A/csv_convert_print test_1.bin
+	../6A/csv_convert_print test_2.bin
+	../6A/csv_convert_print test.bin
+
