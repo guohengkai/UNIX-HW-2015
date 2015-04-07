@@ -15,13 +15,22 @@ using std::vector;
 
 namespace ghk
 {
-CsvHandler::CsvHandler(string &file_name)
+CsvHandler::CsvHandler(const string &file_name)
 {
     Load(file_name);
 }
 
-bool CsvHandler::Save(string &file_name) const
+bool CsvHandler::Save(const string &file_name, int begin, int end) const
 {
+    if (begin < 0)
+    {
+        begin = 0;
+    }
+    if (end < 0 || end > static_cast<int>(data_.size()))
+    {
+        end = static_cast<int>(data_.size());
+    }
+
     if (!has_data())
     {
         printf("No data for saving.\n");
@@ -46,12 +55,12 @@ bool CsvHandler::Save(string &file_name) const
         return false;
     }
 
-    bool flag = Save(out_file, type);
+    bool flag = Save(out_file, type, begin, end);
     fclose(out_file);
     return flag;
 }
 
-bool CsvHandler::Load(string &file_name)
+bool CsvHandler::Load(const string &file_name)
 {
     FileType type = GetFileTypeFromName(file_name);
     string mode;
@@ -78,12 +87,12 @@ bool CsvHandler::Load(string &file_name)
 
 bool CsvHandler::Print() const
 {
-    return Save(stdout, FileType::TXT);
+    return Save(stdout, FileType::TXT, -1, -1);
 }
 
-bool CsvHandler::SaveCsv(FILE *file) const
+bool CsvHandler::SaveCsv(FILE *file, int begin, int end) const
 {
-    for (size_t i = 0; i < data_.size(); ++i)
+    for (int i = begin; i < end; ++i)
     {
         for (size_t j = 0; j < data_[i].size(); ++j)
         {
@@ -133,17 +142,18 @@ void WriteSizet(size_t size, FILE *file)
     fputc(static_cast<char>(size % 256), file);
 }
 
-bool CsvHandler::SaveBin(FILE *file) const
+bool CsvHandler::SaveBin(FILE *file, int begin, int end) const
 {
     // Write the identifier of binary file
     fwrite(BIN_HEAD, sizeof(char), BIN_HEAD_LEN, file);
 
     // Write number of row and column (Max: 256 * 256 - 1)
-    WriteSizet(data_.size(), file);
-    WriteSizet(data_[0].size(), file);
+    size_t save_size = static_cast<size_t>(end - begin);
+    WriteSizet(save_size, file);
+    WriteSizet(data_[begin].size(), file);
 
     // Write table data
-    for (size_t i = 0; i < data_.size(); ++i)
+    for (int i = begin; i < end; ++i)
         for (size_t j = 0; j < data_[i].size(); ++j)
         {
             WriteSizet(data_[i][j].size(), file);  // Length
@@ -155,15 +165,15 @@ bool CsvHandler::SaveBin(FILE *file) const
     return true;
 }
 
-bool CsvHandler::SaveTxt(FILE *file) const
+bool CsvHandler::SaveTxt(FILE *file, int begin, int end) const
 {
     vector<size_t> col_len;
-    for (size_t i = 0; i < data_[0].size(); ++i)
+    for (size_t i = begin; i < data_[begin].size(); ++i)
     {
-        col_len.push_back(data_[0][i].size());
+        col_len.push_back(data_[begin][i].size());
     }
     
-    for (size_t i = 1; i < data_.size(); ++i)
+    for (int i = begin + 1; i < end; ++i)
         for (size_t j = 0; j < data_[i].size(); ++j)
         {
             col_len[j] = std::max(col_len[j], data_[i][j].size());
@@ -179,7 +189,7 @@ bool CsvHandler::SaveTxt(FILE *file) const
     }
     fprintf(file, "\n");
 
-    for (size_t i = 0; i < data_.size(); ++i)
+    for (int i = 0; i < end; ++i)
     {
         for (size_t j = 0; j < data_[i].size(); ++j)
         {
@@ -212,7 +222,7 @@ bool CsvHandler::SaveTxt(FILE *file) const
     return true;
 }
 
-bool CsvHandler::Save(FILE *file, FileType type) const
+bool CsvHandler::Save(FILE *file, FileType type, int begin, int end) const
 {
     if (data_.empty())
     {
@@ -228,15 +238,15 @@ bool CsvHandler::Save(FILE *file, FileType type) const
 
     if (type == FileType::CSV)
     {
-        return SaveCsv(file);
+        return SaveCsv(file, begin, end);
     }
     else if (type == FileType::BIN)
     {
-        return SaveBin(file);
+        return SaveBin(file, begin, end);
     }
     else  // FileType::TXT
     {
-        return SaveTxt(file);
+        return SaveTxt(file, begin, end);
     }
 }
 
@@ -409,7 +419,7 @@ bool CsvHandler::Load(FILE *file, FileType type)
 
 }
 
-FileType CsvHandler::GetFileTypeFromName(string &file_name) const
+FileType CsvHandler::GetFileTypeFromName(const string &file_name) const
 {
     auto pos = file_name.find_last_of(".");
     if (pos != string::npos)
