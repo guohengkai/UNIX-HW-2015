@@ -114,8 +114,4 @@ bool CsvMapReducer::MapReduce(const string &input_name,
     return true;
 }
 
-bool CsvMapReducer::SplitCsvFile(const string &input_name) const
-{
-    return true;
-}
 }  // namespace ghk

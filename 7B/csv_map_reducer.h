@@ -22,7 +22,6 @@ public:
     inline int split_num() const { return split_num_; }
     inline void set_split_num(int split_num) { split_num_ = split_num; }
 private:
-    bool SplitCsvFile(const std::string &input_name) const;
     int split_num_;
     CsvHandler handler_;
 };
