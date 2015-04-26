@@ -7,11 +7,11 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
-//#include "csv_ipc_map_reducer.h"
+#include "csv_ipc_map_reducer.h"
 #include "csv_mmap_handler.h"
 
 using std::string;
-//using ghk::CsvIpcMapReducer;
+using ghk::CsvIpcMapReducer;
 using ghk::CsvMmapHandler;
 
 int main(int argc, char **argv)
@@ -31,7 +31,6 @@ int main(int argc, char **argv)
     }
     else
     {
-        /*
         string output_name(argv[2]);
         int split_num = 3;
         if (argc >= 4)
@@ -46,7 +45,7 @@ int main(int argc, char **argv)
         else
         {
             printf("Fail to save binary file.\n");
-        }*/
+        }
     }
 
     return 0;
