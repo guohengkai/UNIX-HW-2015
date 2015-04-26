@@ -1,0 +1,6 @@
+1. Environment
+    Ubuntu 13.04, gcc 4.7.3
+2. Usage
+    Use "./csv_ipc" for details. And use "make test" for testing,
+3. Algorithm
+    The main program will fork several child map processes and one reduce processes. It will also create pipe for each map process and FIFO for reduce process. Then the main program reads csv line by line, and distribute the lines to child map processes using pipes. For each line, first send the line number, then line length, finally the line string. In child map processes, lines are converted into binary char array and sent to the reduce process using FIFO. For each binary char array, first send the column number for check, then line number and line length, finally the array itself. At last, the reduce process merge the binary char arrays and save into the binary file.

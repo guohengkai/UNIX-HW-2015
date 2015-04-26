@@ -22,7 +22,10 @@ public:
     inline void set_split_num(int split_num) { split_num_ = split_num; }
 private:
     int split_num_;
-
+    void Map(int fd[2], int child_id, int out_fds);
+    void Reduce(FILE *out_file, int in_fds);
+    bool GetCsvLine(FILE *file, std::string *line);
+    size_t CsvLine2Bin(const std::string &line, std::string *bin_line);
 };
 }  // namespace ghk
 
