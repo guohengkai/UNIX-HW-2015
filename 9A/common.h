@@ -12,7 +12,7 @@
 namespace ghk
 {
 const uint16_t SERV_PORT = 12345;
-const char *DEFAULT_SERV_IP = "127.0.0.1";
+const char DEFAULT_SERV_IP[] = "127.0.0.1";
 const int MAX_CONNECT = 20;
 }  // namespace ghk
 
