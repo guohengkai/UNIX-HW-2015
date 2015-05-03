@@ -16,6 +16,6 @@ clean:
 	rm -rf $(TARGETS) $(OBJS)
 test:
 	./$(TARGETS) s
-	gnome-terminal -x bash -c "./$(TARGETS) c 127.0.0.1 ghk"
-	gnome-terminal -x bash -c "./$(TARGETS) c 127.0.0.1"
-	gnome-terminal -x bash -c "./$(TARGETS) c 127.0.0.1"
+	gnome-terminal -x bash -c "./$(TARGETS) c 127.0.0.1 ghk; echo "Press ENTER to exit..."; read"
+	gnome-terminal -x bash -c "./$(TARGETS) c 127.0.0.1; echo "Press ENTER to exit..."; read"
+	gnome-terminal -x bash -c "./$(TARGETS) c 127.0.0.1; echo "Press ENTER to exit..."; read"

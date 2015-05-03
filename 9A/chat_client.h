@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <string>
+#include "common.h"
 
 namespace ghk
 {
@@ -22,14 +23,15 @@ public:
     const std::string &nick_name() const { return nick_name_; }
 
 private:
+    void SendRawMessage(MsgType type, const std::string &msg) const;
     void SendNickName() const;
-    void RequestNickName() const;
-    void ShowMessage(const char *raw_msg) const;
     void SendMessage(const std::string &msg) const;
     void SendHeartCheck() const;
+    void ShowMessage(const char *raw_msg) const;
     void ShowTimeOutMessage() const;
 
     int sock_fd_;
+    FILE *fp_;
     std::string nick_name_;
 };
 }  // namespace ghk

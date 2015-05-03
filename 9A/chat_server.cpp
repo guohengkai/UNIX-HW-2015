@@ -17,7 +17,7 @@ namespace ghk
 {
 bool ChatServer::Init(uint16_t port)
 {
-    return false;
+    return true;
 }
 
 void ChatServer::Loop()
