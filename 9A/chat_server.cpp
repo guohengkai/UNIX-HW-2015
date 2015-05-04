@@ -131,8 +131,6 @@ void ChatServer::Loop()
                         case MsgType::MSG_TEXT:
                             SendMessage(i, raw_msg);
                             break;
-                        case MsgType::MSG_HEART:
-                            break;
                         case MsgType::MSG_NAME:
                             SetNickName(i, raw_msg);
                             break;
@@ -231,10 +229,5 @@ void ChatServer::SendMessage(int index, const char *msg) const
             printf("Sended to Client %d.\n", i);
         }
     }
-}
-
-void ChatServer::CheckHeart(int index)
-{
-
 }
 }  // namespace ghk

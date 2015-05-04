@@ -26,7 +26,6 @@ private:
 
     void SendRawMessage(int index, MsgType type, const char *raw_msg) const;
     void SendMessage(int index, const char *msg) const;
-    void CheckHeart(int index);
 
     int client_fd_[MAX_CONNECT];
     std::string client_names_[MAX_CONNECT];

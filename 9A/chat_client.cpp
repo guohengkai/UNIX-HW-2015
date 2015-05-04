@@ -95,9 +95,6 @@ void ChatClient::Loop()
                 case MsgType::MSG_TEXT:
                     ShowMessage(raw_msg);
                     break;
-                case MsgType::MSG_HEART:
-                    SendHeartCheck();
-                    break;
                 case MsgType::MSG_NAME:
                     nick_name_ = string(raw_msg);
                     printf("Hello, your name is [%s].\n", nick_name_.c_str());
@@ -145,11 +142,6 @@ void ChatClient::SendMessage(const string &msg) const
     SendRawMessage(MsgType::MSG_TEXT, msg);
 }
 
-void ChatClient::SendHeartCheck() const
-{
-    SendRawMessage(MsgType::MSG_HEART, "OK");
-}
-
 void ChatClient::ShowMessage(const char *raw_msg) const
 {
     const int name_len = raw_msg[0];
@@ -164,8 +156,4 @@ void ChatClient::ShowMessage(const char *raw_msg) const
     printf("[%s] said: %s\n", name, msg);
 }
 
-void ChatClient::ShowTimeOutMessage() const
-{
-    printf("Time out for sending message, please try again.\n");
-}
 }  // namespace ghk

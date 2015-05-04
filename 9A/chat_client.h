@@ -26,9 +26,7 @@ private:
     void SendRawMessage(MsgType type, const std::string &msg) const;
     void SendNickName() const;
     void SendMessage(const std::string &msg) const;
-    void SendHeartCheck() const;
     void ShowMessage(const char *raw_msg) const;
-    void ShowTimeOutMessage() const;
 
     int sock_fd_;
     FILE *fp_;

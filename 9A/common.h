@@ -21,7 +21,6 @@ const int LISTENQ = 20;
 enum MsgType
 {
     MSG_TEXT = 0,
-    MSG_HEART,
     MSG_NAME
 };
 
