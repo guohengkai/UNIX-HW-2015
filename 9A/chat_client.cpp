@@ -41,12 +41,14 @@ bool ChatClient::Init(const string &ip_addr, uint16_t port,
         return false;
     }
 
-    if (connect(sock_fd_, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
+    if (connect(sock_fd_, (struct sockaddr *)&serv_addr,
+                sizeof(serv_addr)) == -1)
     {
         printf("Client connect error.\n");
         return false;
     }
 
+    printf("Start to set the name to [%s]...\n", nick_name.c_str());
     nick_name_ = nick_name;
     SendNickName();
 
@@ -59,30 +61,34 @@ void ChatClient::Loop()
     char send_line[MAX_LINE];
     const int in_fd = fileno(fp_);
     const int max_fd = std::max(in_fd, sock_fd_);
+    int nready;
 
     FD_ZERO(&recv_set);
+    // printf("Start looping...\n");
     while (1)
     {
         FD_SET(in_fd, &recv_set);
         FD_SET(sock_fd_, &recv_set);
-        if (select(max_fd + 1, &recv_set, NULL, NULL, NULL) < 0)
+        if ((nready = select(max_fd + 1, &recv_set, NULL, NULL, NULL)) < 0)
         {
             printf("Client select error.\n");
             return;
         }
+        // printf("The number of response is %d.\n", nready);
 
         if (FD_ISSET(sock_fd_, &recv_set))  // Socket is readable
         {
             char type, len;
             if (read(sock_fd_, &type, 1) <= 0)
             {
-                printf("Socket read error.\n");
+                printf("Client socket read error.\n");
                 return;
             }
             readln(sock_fd_, &len, 1);
 
             char raw_msg[MAX_LINE];
             readln(sock_fd_, raw_msg, len);
+            raw_msg[(int)len] = '\0';
             
             switch (type)
             {
@@ -93,12 +99,11 @@ void ChatClient::Loop()
                     SendHeartCheck();
                     break;
                 case MsgType::MSG_NAME:
-                    raw_msg[strlen(raw_msg)] = '\0';
                     nick_name_ = string(raw_msg);
                     printf("Hello, your name is [%s].\n", nick_name_.c_str());
                     break;
                 default:
-                    printf("Message type error.\n");
+                    printf("Client message type error.\n");
                     return;
             }
         }
@@ -109,6 +114,7 @@ void ChatClient::Loop()
             {
                 return;
             }
+            send_line[strlen(send_line) - 1] = '\0';
             SendMessage(string(send_line));
         }
     }
@@ -119,13 +125,18 @@ void ChatClient::SendRawMessage(MsgType type, const string &msg) const
     char raw_msg[msg.size() + 2];
     raw_msg[0] = type;
     raw_msg[1] = static_cast<char>(msg.size());
-    memcpy(raw_msg + 2, msg.c_str(), msg.size());
+    if (!msg.empty())
+    {
+        memcpy(raw_msg + 2, msg.c_str(), msg.size());
+    }
     writeln(sock_fd_, raw_msg, msg.size() + 2);
+    // printf("Sent message: %s\n", msg.c_str());
 }
 
 void ChatClient::SendNickName() const
 {
     SendRawMessage(MsgType::MSG_NAME, nick_name_);
+    // printf("Name [%s] sent.\n", nick_name_.c_str());
 }
 
 void ChatClient::SendMessage(const string &msg) const

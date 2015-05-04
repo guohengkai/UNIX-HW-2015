@@ -14,8 +14,9 @@ namespace ghk
 {
 const uint16_t SERV_PORT = 12345;
 const char DEFAULT_SERV_IP[] = "127.0.0.1";
-const int MAX_CONNECT = 20;
+const int MAX_CONNECT = FD_SETSIZE;
 const int MAX_LINE = 255;
+const int LISTENQ = 20;
 
 enum MsgType
 {

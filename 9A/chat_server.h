@@ -20,20 +20,20 @@ public:
     void Loop();
 
 private:
-    void AddClient(int index);
-    void SetNickName(int index, const std::string &nick_name);
-    void SendNickName(int index) const;
-    void SendMessage(int src_index, int tar_index,
-            const std::string &msg) const;
-    void ReceiveMessage(int src_index, const char *raw_msg) const;
+    bool AddClient(int conn_fd);
+    void RemoveClient(int index);
+    void SetNickName(int index, const char *raw_msg);
+
+    void SendRawMessage(int index, MsgType type, const char *raw_msg) const;
+    void SendMessage(int index, const char *msg) const;
     void CheckHeart(int index);
 
     int client_fd_[MAX_CONNECT];
     std::string client_names_[MAX_CONNECT];
     int max_client_;
     int listen_fd_;
-    fd_set all_set_;
     int max_fd_;
+    fd_set all_set_;
 };
 }  // namespace ghk
 

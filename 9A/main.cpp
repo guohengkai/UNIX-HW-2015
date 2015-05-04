@@ -35,7 +35,7 @@ int main(int argc, char **argv)
             ChatServer server;
             if (server.Init(ghk::SERV_PORT))
             {
-                printf("The server is listening on Port %d...\n", ghk::SERV_PORT);
+                printf("The server is running...\n");
                 server.Loop();
             }
             else

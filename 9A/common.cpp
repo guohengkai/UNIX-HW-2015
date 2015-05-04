@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <cstdio>
 
 namespace ghk
 {
@@ -64,10 +65,10 @@ ssize_t writeln(int fd, const void *vptr, size_t n)
             {
                 return -1;
             }
-
-            nleft -= nwritten;
-            ptr += nwritten;
         }
+
+        nleft -= nwritten;
+        ptr += nwritten;
     }
     
     return n;
