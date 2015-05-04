@@ -1,0 +1,6 @@
+1. Environment
+    Ubuntu 13.04, gcc 4.7.3
+2. Usage
+    Use "./chatroom" for details. And use "make test" for testing,
+3. Algorithm
+    The program implements server and client for chatroom using I/O multiplexing. The format of message is: [Message type](1 byte) + [Length of message](1 byte) + [Message text], where the type of message is defined in common.h.
